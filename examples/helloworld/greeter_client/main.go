@@ -24,6 +24,9 @@ import (
 	"flag"
 	"log"
 	"time"
+        "net/http"
+	"io"
+	"io/ioutil"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -57,4 +60,39 @@ func main() {
 		log.Fatalf("could not greet: %v", err)
 	}
 	log.Printf("Greeting: %s", r.GetMessage())
+
+	r, err = c.SayHello(ctx, &pb.HelloRequest{Name: *name})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	log.Printf("Greeting: %s", r.GetMessage())
+
+	conn, err = grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c = pb.NewGreeterClient(conn)
+
+	r, err = c.SayHello(ctx, &pb.HelloRequest{Name: *name})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	log.Printf("Greeting: %s", r.GetMessage())
+
+	tr := &http.Transport{}
+	client := &http.Client{Transport: tr}
+	res, err := client.Get("http://" + *addr + "/productpage")
+	io.Copy(ioutil.Discard, res.Body)
+	res.Body.Close()
+
+	res, err = client.Get("http://" + *addr + "/productpage")
+	io.Copy(ioutil.Discard, res.Body)
+	res.Body.Close()
+
+	tr = &http.Transport{}
+	client = &http.Client{Transport: tr}
+	res, err = client.Get("http://" + *addr + "/productpage")
+	io.Copy(ioutil.Discard, res.Body)
+	res.Body.Close()
 }
